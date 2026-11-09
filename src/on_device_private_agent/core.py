@@ -1,4 +1,8 @@
-"""Offline agent core: planner -> retrieval -> grounded answer. $0 inference."""
+"""Offline agent core: planner -> retrieval -> grounded answer.
+
+Local compute only — no LLM and no API call is ever made, so the measured
+inference cost of an answer is $0 (local CPU time, not a billed API call).
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,8 +16,9 @@ DEFAULT_DOCS: list[Document] = [
              "is required, and inference cost is zero. Documents are indexed locally "
              "with TF-IDF."),
     Document("pricing", "Pricing and costs",
-             "Inference costs zero dollars because the model runs locally. Hosting a "
-             "static page costs almost nothing, so 1000 users still cost $0 in inference."),
+             "Inference costs zero dollars because everything runs locally and no "
+             "API is called. Hosting a static page costs almost nothing, so 1000 "
+             "users still cost $0 in inference."),
     Document("offline", "Offline mode",
              "Offline mode works without internet. The index, planner and browser "
              "fallback all run locally. Service workers can cache the page for full "
@@ -23,15 +28,21 @@ DEFAULT_DOCS: list[Document] = [
              "than FP16 with a small quality drop and much lower memory use. See the "
              "quantization guide for the size and latency table."),
     Document("browser", "Browser deployment",
-             "The browser demo uses WebLLM when WebGPU is available and falls back to "
-             "TF-IDF retrieval in vanilla JavaScript when it is not. No download is "
-             "required for the fallback."),
+             "The browser demo always runs the local TF-IDF fallback in vanilla "
+             "JavaScript: no download is required and nothing leaves the device. "
+             "A WebLLM integration hook is present in the demo code but is a stub "
+             "that returns null, so no LLM runs in the browser demo today."),
 ]
 
 
 @dataclass
 class Answer:
-    """A grounded answer with sources and its (zero) cost."""
+    """A grounded answer with the sources its text actually uses.
+
+    ``cost_usd`` is the measured inference spend: it is 0.0 because the
+    answer is produced by local TF-IDF compute and no API call is made.
+    It is a reported measurement of this design, not a billed figure.
+    """
 
     text: str
     intent: str
@@ -51,7 +62,12 @@ class PrivateAgent:
         self.index.build([*self.index.docs, doc])
 
     def ask(self, query: str) -> Answer:
-        """Answer ``query`` from local documents only. Cost is always $0."""
+        """Answer ``query`` from local documents only.
+
+        No network or API call is made, so the measured inference cost is
+        $0. ``sources`` lists only the documents whose text is used in the
+        answer, never merely-retrieved hits.
+        """
         p = plan(query)
         if p.action == "help":
             return Answer(
@@ -70,5 +86,6 @@ class PrivateAgent:
             best = hits[0].doc
             first = best.text.split(". ")[0].rstrip(".") + "."
             return Answer(text=first, intent=p.intent, sources=[best.id])
-        joined = " ".join(h.doc.text for h in hits[:2])
-        return Answer(text=joined, intent=p.intent, sources=[h.doc.id for h in hits])
+        used = hits[:2]
+        joined = " ".join(h.doc.text for h in used)
+        return Answer(text=joined, intent=p.intent, sources=[h.doc.id for h in used])

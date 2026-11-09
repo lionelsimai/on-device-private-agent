@@ -1,5 +1,11 @@
 # Quantization Guide (GGUF / Q4)
 
+> **Integration guide only.** No quantized model is bundled with, downloaded
+> by, or loaded by this project today (the WebLLM hook is an unimplemented
+> stub). This document describes how a GGUF/WebLLM model *would* be wired in
+> behind the retrieval core; the size/latency figures below are indicative
+> reference values for planning, not measurements from this build.
+
 Quantization stores weights in fewer bits. GGUF is the llama.cpp format.
 
 | Model (example) | FP16 size | Q4_K_M size | RAM (approx) | Tokens/s (phone, indicative) | Quality note |

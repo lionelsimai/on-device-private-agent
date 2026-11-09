@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "on-device-private-agent"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline private agent: TF-IDF retrieval + rule planner, $0 inference, browser + edge ready"
 readme = "README.md"
 license = {text = "MIT"}

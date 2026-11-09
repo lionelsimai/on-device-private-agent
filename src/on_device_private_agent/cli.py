@@ -10,7 +10,7 @@ from .core import PrivateAgent
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point."""
     ap = argparse.ArgumentParser(prog="private-agent")
-    sub = ap.add_subparsers(dest="cmd")
+    sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("demo")
     ask_parser = sub.add_parser("ask")
     ask_parser.add_argument("query")
@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"text": ans.text, "intent": ans.intent,
                           "sources": ans.sources, "cost_usd": ans.cost_usd}, indent=2))
         return 0
+    # demo
     for q in ["How does privacy work?",
               "What does inference cost for 1000 users?",
               "summarise quantization"]:
